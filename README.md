@@ -1,8 +1,24 @@
 # IndicatorExample
 
-   [Test]        public void WhenIgnoreBetweenIsCalledThenItStartsTakingAfterwards()        {            var list = new List<int>();
-            var stream = new Subject<int>();
-            using (stream.IgnoreBetween(i => i == 2, i => i == 5).Subscribe(list.Add))            {                Enumerable.Range(0, 10).ForEach(stream.OnNext);
-                new[] {0, 1, 6, 7, 8, 9}.SequenceEqual(list).Should().BeTrue();
-                Enumerable.Range(0, 10).ForEach(stream.OnNext);
-                new[] { 0, 1, 6, 7, 8, 9, 0, 1, 6, 7, 8, 9 }.SequenceEqual(list).Should().BeTrue();            }        }
+   public static IObservable<T> IgnoreBetween<T>(this IObservable<T> source, Func<T, bool> start, Func<T, bool> end)        
+   {            
+        return Observable.Create<T>(observer =>            
+        {                
+            var startTaking = true;
+            return source.Where(item =>
+            {                        
+                if (start(item))                        
+                {
+                    startTaking = false;                        
+                }
+                if (startTaking) return true;
+                if (end(item))                        
+                {                            
+                    startTaking = true;                            
+                    return false;                        
+                }
+                return false;                    
+        })                    
+        .Subscribe(observer);            
+  });        
+}
